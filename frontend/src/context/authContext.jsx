@@ -9,33 +9,41 @@
 // making the user's authentication status readily available throughout the component tree. 
 // This structure facilitates a clean and efficient way to handle global authentication state 
 // within a React application.
-import { createContext, useState} from 'react';
-
-const AuthContext = createContext();
+import { useState } from "react";
+import { AuthContext } from "./AuthContextValue.jsx"; // import context from separate file
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem('pos-user');
-        return storedUser ? JSON.parse(storedUser) : null;
-    });
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('pos-user');
+    if (!storedUser || storedUser === 'undefined') return null;
 
-        const login = (userData, token) => {
-        setUser(userData);
-        localStorage.setItem('pos-user', JSON.stringify(userData)); 
-        localStorage.setItem('pos-token', token);
-        }
+    try {
+      return JSON.parse(storedUser);
+    } catch (err) {
+      console.warn('Failed to parse localStorage user:', err);
+      localStorage.removeItem('pos-user');
+      return null;
+    }
+  });
 
-        const logout = () => {
-            setUser(null);
-            localStorage.removeItem('pos-user');
-            localStorage.removeItem('pos-token');
-        }
+  const login = (userData, token) => {
+    setUser(userData);
+    localStorage.setItem('pos-user', JSON.stringify(userData));
+    localStorage.setItem('pos-token', token);
+  };
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('pos-user');
+    localStorage.removeItem('pos-token');
+  };
 
-export  default AuthProvider;
+  return (
+    <AuthContext.Provider value={{ user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthProvider;
+
